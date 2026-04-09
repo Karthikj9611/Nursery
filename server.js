@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 3000;
 // ------------------ MongoDB Connection ------------------
 //mongoose.connect("mongodb://127.0.0.1:27017/loginDB")
 mongoose.connect("mongodb+srv://karthikj:karthikj@cluster0.hkz6yzz.mongodb.net/loginDB?retryWrites=true&w=majority")
+
+
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.log("❌ MongoDB Connection Error:", err));
 
@@ -122,30 +124,35 @@ app.post("/login", async (req, res) => {
 
     const { username, phone, password } = req.body;
 
-    const trimmedUsername = username.trim();
-    const trimmedPhone = phone.toString().trim();
+    // Trim safely
+    const trimmedUsername = username ? username.trim() : "";
+    const trimmedPhone = phone ? phone.toString().trim() : "";
 
-    // 1️⃣ Check if username exists
-    const userByUsername = await User.findOne({ username: trimmedUsername });
-    if (!userByUsername) {
-      console.log("⚠️ Username not found:", trimmedUsername);
-      return res.send("❌ Username not found");
+    // ❗ Check at least one is provided
+    if (!trimmedUsername && !trimmedPhone) {
+      return res.send("❌ Enter username or phone");
     }
 
-    // 2️⃣ Check if phone matches the user
-    if (userByUsername.phone !== trimmedPhone) {
-      console.log("⚠️ Phone number does not match for user:", trimmedUsername);
-      return res.send("❌ Phone number does not match");
+    // 🔍 Find user by username OR phone
+    const user = await User.findOne({
+      $or: [
+        trimmedUsername ? { username: trimmedUsername } : null,
+        trimmedPhone ? { phone: trimmedPhone } : null
+      ].filter(Boolean)
+    });
+
+    if (!user) {
+      return res.send("❌ User not found");
     }
 
-    // 3️⃣ Compare password
-    const isMatch = await bcrypt.compare(password, userByUsername.password);
+    // 🔐 Check password
+    const isMatch = await bcrypt.compare(password, user.password);
     console.log("🔹 Password Match:", isMatch);
 
     if (!isMatch) return res.send("❌ Wrong password");
 
-    // 4️⃣ Success
-    req.session.user = userByUsername.username;
+    // ✅ Success
+    req.session.user = user.username;
     res.send("✅ Login successful");
 
   } catch (err) {
