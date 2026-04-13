@@ -261,3 +261,45 @@ app.get("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
+
+
+// GET ALL USERS - Admin endpoint
+app.get('/api/admin/users', async (req, res) => {
+  try {
+	  
+	  debugger;
+    // Check if user is admin (optional - remove if no auth)
+    // const token = req.headers.authorization?.split(' ')[1];
+    // if (!token) {
+    //   return res.status(401).json({ error: 'Unauthorized' });
+    // }
+    
+    // Fetch users from your database
+    let users = [];
+    
+    // If using MongoDB with mongoose
+    if (mongoose.models.User) {
+      users = await mongoose.models.User.find({}).select('-password -__v');
+    } 
+    // If using direct MongoDB collection
+    else if (db) {
+      users = await db.collection('users').find({}).toArray();
+      // Remove passwords
+      users = users.map(u => {
+        delete u.password;
+        return u;
+      });
+    }
+    // If using MySQL/Knex
+    else if (knex) {
+      users = await knex('users').select('id', 'name', 'email', 'phone', 'role', 'created_at');
+    }
+    
+    console.log(`✅ Returning ${users.length} users`);
+    res.json(users);
+    
+  } catch (error) {
+    console.error('Error in /api/admin/users:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
