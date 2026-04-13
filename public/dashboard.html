@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
   <title>KR Nursery | Premium Plants & Greenery</title>
   <!-- Google Fonts & Font Awesome -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
@@ -1196,7 +1197,6 @@ body {
   // Fetch all users from database and display in table
 async function loadAllUsersFromDB() {
   try {
-  debugger;
     const response = await fetch('/api/admin/users');
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -1257,6 +1257,33 @@ async function init() {
     localStorage.removeItem("userLoggedIn");
     window.location.href = "/logout";
   });
+  
+  
+
+	
 </script>
+
+<script>
+fetch("/api/user")
+  .then(res => res.json())
+  .then(user => {
+    console.log(user);
+
+    // Example: show username
+    document.getElementById("username").innerText = user;
+	debugger;
+	  if(user == "admin")
+	  {
+		$(".users-table-section").show();
+	  }
+	  else
+	  {
+		$(".users-table-section").hide();
+	  }
+  })
+  .catch(err => console.log(err));
+</script>
+
+
 </body>
 </html>

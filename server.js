@@ -251,6 +251,13 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
+app.get("/api/user", (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not logged in" });
+  }
+  res.json(req.session.user);
+});
+
 // ------------------ Logout ------------------
 app.get("/logout", (req, res) => {
   req.session.destroy();
@@ -267,7 +274,7 @@ app.listen(PORT, () => {
 app.get('/api/admin/users', async (req, res) => {
   try {
 	  
-	  debugger;
+	  
     // Check if user is admin (optional - remove if no auth)
     // const token = req.headers.authorization?.split(' ')[1];
     // if (!token) {
