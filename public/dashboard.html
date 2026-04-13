@@ -1267,11 +1267,6 @@ async function init() {
 fetch("/api/user")
   .then(res => res.json())
   .then(user => {
-    console.log(user);
-
-    // Example: show username
-    document.getElementById("username").innerText = user;
-	debugger;
 	  if(user == "admin")
 	  {
 		$(".users-table-section").show();
