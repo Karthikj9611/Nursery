@@ -751,6 +751,80 @@ body {
 @media (max-width: 480px) {
   .contact-buttons { flex-direction: column; }
 }
+
+/* Users Table Section - New */
+.users-table-section {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #c8e6c9;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.users-table-header {
+  background: linear-gradient(130deg, #2e7d32, #1b5e20);
+  color: white;
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.users-table-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.users-table-header h3 i {
+  margin-right: 8px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.users-table th {
+  text-align: left;
+  padding: 0.8rem 1rem;
+  background: #f1f8e9;
+  color: #2e7d32;
+  font-weight: 600;
+  border-bottom: 1px solid #c8e6c9;
+}
+
+.users-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #eef5e8;
+  color: #1a3a1a;
+}
+
+.users-table tr:hover {
+  background: #f9fff6;
+}
+
+.user-role-badge {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.user-role-badge.admin {
+  background: #ff9800;
+  color: white;
+}
+
+.loading-users-text {
+  text-align: center;
+  padding: 2rem;
+  color: #2e7d32;
+}
+
 </style>
 </head>
 <body>
@@ -776,6 +850,24 @@ body {
       </div>
     </div>
   </div>
+  
+  <!-- Users Table from Database -->
+<div class="users-table-section">
+  <div class="users-table-header">
+    <h3><i class="fas fa-database"></i> All Users from Database</h3>
+    <span id="dbUserCount" style="background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 20px; font-size: 0.7rem;">Loading...</span>
+  </div>
+  <div style="overflow-x: auto;">
+    <table class="users-table" id="usersTable">
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Phone</th></tr>
+      </thead>
+      <tbody id="usersTableBody">
+        <tr><td colspan="6" class="loading-users-text"><i class="fas fa-spinner fa-pulse"></i> Loading users from database...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
   <!-- FILTERS - Nursery specific -->
   <div class="unified-filters">
@@ -1100,13 +1192,64 @@ body {
       return m;
     }); 
   }
-
-  async function init() { 
-    initEvents(); 
-    updatePriceFromDropdown(); 
-    await fetchPlants(); // Load plants from database
-    updateCartUI(); 
+  
+  // Fetch all users from database and display in table
+async function loadAllUsersFromDB() {
+  try {
+  debugger;
+    const response = await fetch('/api/admin/users');
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const users = await response.json();
+    console.log(`✅ Loaded ${users.length} users from database`);
+    
+    const tbody = document.getElementById('usersTableBody');
+    const userCountSpan = document.getElementById('dbUserCount');
+    
+    if (!users || users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">No users found in database</td></tr>';
+      userCountSpan.innerText = '0 users';
+      return;
+    }
+    
+    userCountSpan.innerText = `${users.length} users`;
+    
+    let html = '';
+    users.forEach(user => {
+      const joinDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+      const role = user.isAdmin ? 'Admin' : (user.role || 'Customer');
+      const roleClass = role === 'Admin' ? 'admin' : '';
+      
+      html += `
+        <tr>
+          <td>${user._id || user.id || 'N/A'}</td>
+          <td><strong>${escapeHtml(user.username || user.username || 'N/A')}</strong></td>
+          <td>${escapeHtml(user.phone || user.mobile || 'N/A')}</td>
+        </tr>
+      `;
+    });
+    
+    tbody.innerHTML = html;
+    
+  } catch (error) {
+    console.error('❌ Error loading users from DB:', error);
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:2rem; color:#c62828;">
+      <i class="fas fa-exclamation-triangle"></i> Failed to load users. Make sure backend API /api/admin/users exists.
+      <br><small>${error.message}</small>
+    </td></tr>`;
+    document.getElementById('dbUserCount').innerText = 'Error';
   }
+}
+
+async function init() { 
+  initEvents(); 
+  updatePriceFromDropdown(); 
+  await fetchPlants(); 
+  await loadAllUsersFromDB();  // <-- ADD THIS LINE
+  updateCartUI(); 
+}
   
   init();
   
